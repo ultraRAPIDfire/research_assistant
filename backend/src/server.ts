@@ -14,8 +14,6 @@ dotenv.config();
 
 const app = express();
 
-const PORT = process.env.PORT || 5000;
-
 app.use(
   cors({
     origin:
@@ -30,8 +28,7 @@ app.use(cookieParser());
 
 app.get("/", (_req, res) => {
   res.json({
-    message:
-      "AI Research Assistant API is running",
+    message: "AI Research Assistant API is running",
   });
 });
 
@@ -72,8 +69,8 @@ app.use(
   aiRoutes
 );
 
-app.listen(PORT, () => {
-  console.log(
-    `Server running on http://localhost:${PORT}`
-  );
+const PORT = Number(process.env.PORT) || 5000;
+
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`Server running on port ${PORT}`);
 });
