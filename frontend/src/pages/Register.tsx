@@ -11,6 +11,8 @@ import {
   useNavigate,
 } from "react-router-dom";
 
+import { api } from "../services/api";
+
 export default function Register() {
   const navigate = useNavigate();
 
@@ -29,8 +31,11 @@ export default function Register() {
   const [error, setError] =
     useState("");
 
-  function handleSubmit(
-    event: FormEvent
+  const [loading, setLoading] =
+    useState(false);
+
+  async function handleSubmit(
+    event: FormEvent<HTMLFormElement>
   ) {
     event.preventDefault();
 
@@ -48,6 +53,14 @@ export default function Register() {
       return;
     }
 
+    if (password.length < 8) {
+      setError(
+        "Password must be at least 8 characters."
+      );
+
+      return;
+    }
+
     if (password !== confirmPassword) {
       setError(
         "Passwords do not match."
@@ -56,14 +69,42 @@ export default function Register() {
       return;
     }
 
-    localStorage.setItem(
-      "research_auth",
-      "true"
-    );
+    try {
+      setLoading(true);
 
-    navigate("/", {
-      replace: true,
-    });
+      const result =
+        await api.register({
+          name: name.trim(),
+          email: email.trim(),
+          password,
+        });
+
+      /*
+       * Registration succeeded on the backend.
+       *
+       * We intentionally do not store an authentication
+       * flag in localStorage. Authentication should come
+       * from the backend session/cookie.
+       */
+
+      if (result.user) {
+        navigate("/login", {
+          replace: true,
+          state: {
+            message:
+              "Account created successfully. Please sign in.",
+          },
+        });
+      }
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Registration failed."
+      );
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -75,12 +116,13 @@ export default function Register() {
       <div className="auth-layout">
 
         <section className="auth-brand-panel">
+
           <div className="auth-logo">
-            🔬
+            RA
           </div>
 
           <div className="auth-badge">
-            ✨ Start researching
+            RESEARCH WORKSPACE
           </div>
 
           <h1>
@@ -90,12 +132,13 @@ export default function Register() {
           </h1>
 
           <p>
-            Keep your projects, sources,
-            findings, and AI-assisted analysis
-            organized in one place.
+            Keep projects, sources, findings,
+            and AI-assisted analysis organized
+            in one place.
           </p>
 
           <div className="auth-feature-list">
+
             <div>
               <span>01</span>
               Create research projects
@@ -108,14 +151,17 @@ export default function Register() {
 
             <div>
               <span>03</span>
-              Analyze everything with AI
+              Analyze your research with AI
             </div>
+
           </div>
+
         </section>
 
         <section className="auth-card">
 
           <div className="auth-card-header">
+
             <span className="auth-small-label">
               GET STARTED
             </span>
@@ -127,6 +173,7 @@ export default function Register() {
             <p>
               Set up your research workspace.
             </p>
+
           </div>
 
           {error && (
@@ -146,9 +193,13 @@ export default function Register() {
               <input
                 value={name}
                 onChange={(event) =>
-                  setName(event.target.value)
+                  setName(
+                    event.target.value
+                  )
                 }
                 placeholder="Your name"
+                disabled={loading}
+                autoComplete="name"
               />
             </label>
 
@@ -159,9 +210,13 @@ export default function Register() {
                 type="email"
                 value={email}
                 onChange={(event) =>
-                  setEmail(event.target.value)
+                  setEmail(
+                    event.target.value
+                  )
                 }
                 placeholder="you@example.com"
+                disabled={loading}
+                autoComplete="email"
               />
             </label>
 
@@ -172,9 +227,13 @@ export default function Register() {
                 type="password"
                 value={password}
                 onChange={(event) =>
-                  setPassword(event.target.value)
+                  setPassword(
+                    event.target.value
+                  )
                 }
-                placeholder="••••••••"
+                placeholder="At least 8 characters"
+                disabled={loading}
+                autoComplete="new-password"
               />
             </label>
 
@@ -189,21 +248,26 @@ export default function Register() {
                     event.target.value
                   )
                 }
-                placeholder="••••••••"
+                placeholder="Repeat your password"
+                disabled={loading}
+                autoComplete="new-password"
               />
             </label>
 
             <button
               type="submit"
               className="button button-primary auth-submit"
+              disabled={loading}
             >
-              Create workspace →
+              {loading
+                ? "Creating account..."
+                : "Create account"}
             </button>
 
           </form>
 
           <p className="auth-switch">
-            Already have an account?
+            Already have an account?{" "}
 
             <Link to="/login">
               Sign in
@@ -213,6 +277,7 @@ export default function Register() {
         </section>
 
       </div>
+
     </div>
   );
 }

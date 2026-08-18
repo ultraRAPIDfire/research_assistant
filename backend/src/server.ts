@@ -14,45 +14,69 @@ dotenv.config();
 
 const app = express();
 
+const frontendUrl =
+  process.env.FRONTEND_URL ||
+  "http://localhost:5173";
+
 app.use(
   cors({
-    origin:
-      process.env.FRONTEND_URL ||
-      "http://localhost:5173",
+    origin: frontendUrl,
     credentials: true,
   })
 );
 
-app.use(express.json());
-app.use(cookieParser());
+app.use(
+  express.json()
+);
 
-app.get("/", (_req, res) => {
-  res.json({
-    message: "AI Research Assistant API is running",
-  });
-});
+app.use(
+  cookieParser()
+);
 
-app.get("/api/health", async (_req, res) => {
-  try {
-    const result =
-      await pool.query("SELECT NOW()");
-
+app.get(
+  "/",
+  (_req, res) => {
     res.json({
-      status: "ok",
-      database: "connected",
-      time: result.rows[0].now,
-    });
-  } catch (error) {
-    console.error(error);
-
-    res.status(500).json({
-      status: "error",
-      database: "disconnected",
+      message:
+        "AI Research Assistant API is running",
     });
   }
-});
+);
 
-app.use("/api/auth", authRoutes);
+app.get(
+  "/api/health",
+  async (_req, res) => {
+    try {
+      const result =
+        await pool.query(
+          "SELECT NOW()"
+        );
+
+      res.json({
+        status: "ok",
+        database: "connected",
+        time:
+          result.rows[0].now,
+      });
+    } catch (error) {
+      console.error(
+        "DATABASE HEALTH ERROR:",
+        error
+      );
+
+      res.status(500).json({
+        status: "error",
+        database:
+          "disconnected",
+      });
+    }
+  }
+);
+
+app.use(
+  "/api/auth",
+  authRoutes
+);
 
 app.use(
   "/api/projects",
@@ -69,8 +93,20 @@ app.use(
   aiRoutes
 );
 
-const PORT = Number(process.env.PORT) || 5000;
+const PORT =
+  Number(process.env.PORT) ||
+  5000;
 
-app.listen(PORT, "0.0.0.0", () => {
-  console.log(`Server running on port ${PORT}`);
-});
+app.listen(
+  PORT,
+  "0.0.0.0",
+  () => {
+    console.log(
+      `Server running on port ${PORT}`
+    );
+
+    console.log(
+      `Frontend allowed origin: ${frontendUrl}`
+    );
+  }
+);

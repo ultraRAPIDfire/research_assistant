@@ -10,6 +10,9 @@ async function request<T>(
     `${API_URL}${endpoint}`,
     {
       ...options,
+
+      credentials: "include",
+
       headers: {
         "Content-Type": "application/json",
         ...(options?.headers || {}),
@@ -34,6 +37,17 @@ async function request<T>(
 /* =====================================================
    TYPES
 ===================================================== */
+
+export interface User {
+  id: number;
+  name: string;
+  email: string;
+  created_at: string;
+}
+
+export interface AuthResponse {
+  user: User;
+}
 
 export interface Project {
   id: number;
@@ -97,6 +111,52 @@ export interface DeleteResponse {
 ===================================================== */
 
 export const api = {
+
+  /* ===================================================
+     AUTH
+  =================================================== */
+
+  register(data: {
+    name: string;
+    email: string;
+    password: string;
+  }) {
+    return request<AuthResponse>(
+      "/auth/register",
+      {
+        method: "POST",
+        body: JSON.stringify(data),
+      }
+    );
+  },
+
+  login(data: {
+    email: string;
+    password: string;
+  }) {
+    return request<AuthResponse>(
+      "/auth/login",
+      {
+        method: "POST",
+        body: JSON.stringify(data),
+      }
+    );
+  },
+
+  logout() {
+    return request<DeleteResponse>(
+      "/auth/logout",
+      {
+        method: "POST",
+      }
+    );
+  },
+
+  getCurrentUser() {
+    return request<AuthResponse>(
+      "/auth/me"
+    );
+  },
 
   /* ===================================================
      PROJECTS
@@ -233,5 +293,4 @@ export const api = {
       }
     );
   },
-
 };
