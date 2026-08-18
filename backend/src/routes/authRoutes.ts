@@ -20,88 +20,61 @@ function createToken(userId: number) {
 
 router.post("/register", async (req, res) => {
   try {
-    const {
-      name,
-      email,
-      password,
-    } = req.body;
+    const { name, email, password } = req.body;
 
-    if (!name?.trim()) {
+    if (!name || !email || !password) {
       return res.status(400).json({
-        error: "Name is required",
+        error: "Name, email and password are required",
       });
     }
 
-    if (!email?.trim()) {
-      return res.status(400).json({
-        error: "Email is required",
-      });
-    }
+    const existingUser = await pool.query(
+      `
+      SELECT id
+      FROM users
+      WHERE email = $1
+      `,
+      [email.toLowerCase().trim()]
+    );
 
-    if (!password || password.length < 6) {
-      return res.status(400).json({
-        error:
-          "Password must be at least 6 characters",
-      });
-    }
-
-    const normalizedEmail =
-      email.trim().toLowerCase();
-
-    const existing =
-      await pool.query(
-        `
-        SELECT id
-        FROM users
-        WHERE email = $1
-        `,
-        [normalizedEmail]
-      );
-
-    if (existing.rows.length > 0) {
+    if (existingUser.rows.length > 0) {
       return res.status(409).json({
         error: "An account with this email already exists",
       });
     }
 
-    const passwordHash =
-      await bcrypt.hash(password, 12);
+    // Your password hashing code should be here.
+    // Never store plain-text passwords.
 
-    const result =
-      await pool.query(
-        `
-        INSERT INTO users
-          (name, email, password_hash)
-        VALUES
-          ($1, $2, $3)
-        RETURNING id, name, email, created_at
-        `,
-        [
-          name.trim(),
-          normalizedEmail,
-          passwordHash,
-        ]
-      );
+    const passwordHash = await bcrypt.hash(
+      password,
+      12
+    );
 
-    const user = result.rows[0];
-
-    const token = createToken(user.id);
-
-    res.cookie("token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite:
-        process.env.NODE_ENV === "production"
-          ? "none"
-          : "lax",
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
+    const result = await pool.query(
+      `
+      INSERT INTO users
+        (name, email, password_hash)
+      VALUES
+        ($1, $2, $3)
+      RETURNING
+        id,
+        name,
+        email,
+        created_at
+      `,
+      [
+        name.trim(),
+        email.toLowerCase().trim(),
+        passwordHash,
+      ]
+    );
 
     res.status(201).json({
-      user,
+      user: result.rows[0],
     });
   } catch (error) {
-    console.error(error);
+    console.error("REGISTER ERROR:", error);
 
     res.status(500).json({
       error: "Registration failed",
