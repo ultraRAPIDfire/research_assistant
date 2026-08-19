@@ -1,9 +1,13 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 
 export default function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const successMessage =
+    (location.state as { message?: string } | null)?.message || "";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -72,6 +76,10 @@ export default function Login() {
 
             <p>Continue to your research workspace.</p>
           </div>
+
+          {successMessage && (
+            <div className="success">{successMessage}</div>
+          )}
 
           {error && <div className="auth-error">{error}</div>}
 

@@ -441,6 +441,7 @@
 }
 
 .success {
+  margin: 0 0 16px;
   padding: 12px 14px;
   border: 1px solid #b6cdb6;
   border-left: 3px solid var(--success);
@@ -448,6 +449,7 @@
   background: var(--success-soft);
   color: var(--success);
   font-size: 13px;
+  line-height: 1.5;
 }
 
 /* =========================================================

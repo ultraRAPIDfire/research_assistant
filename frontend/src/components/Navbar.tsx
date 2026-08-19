@@ -28,15 +28,6 @@ export default function Navbar() {
               isActive ? "nav-link active" : "nav-link"
             }
           >
-            Home
-          </NavLink>
-
-          <NavLink
-            to="/dashboard"
-            className={({ isActive }) =>
-              isActive ? "nav-link active" : "nav-link"
-            }
-          >
             Dashboard
           </NavLink>
 

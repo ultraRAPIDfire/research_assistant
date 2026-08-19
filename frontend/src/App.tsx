@@ -6,7 +6,6 @@ import {
   Route,
   Routes,
   useNavigate,
-  useLocation,
 } from "react-router-dom";
 
 import Dashboard from "./pages/Dashboard";
@@ -21,11 +20,7 @@ function isAuthenticated() {
   return localStorage.getItem("research_auth") === "true";
 }
 
-function ProtectedRoute({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
   if (!isAuthenticated()) {
     return <Navigate to="/login" replace />;
   }
@@ -36,24 +31,18 @@ function ProtectedRoute({
 function ProjectRoute() {
   const navigate = useNavigate();
 
-  const id = Number(
-    window.location.pathname.split("/")[2]
-  );
+  const id = Number(window.location.pathname.split("/")[2]);
 
   return (
     <ProjectPage
       projectId={id}
-      onOpenSource={(sourceId) =>
-        navigate(`/sources/${sourceId}`)
-      }
+      onOpenSource={(sourceId) => navigate(`/sources/${sourceId}`)}
     />
   );
 }
 
 function SourceRoute() {
-  const id = Number(
-    window.location.pathname.split("/")[2]
-  );
+  const id = Number(window.location.pathname.split("/")[2]);
 
   return <SourcePage sourceId={id} />;
 }
@@ -65,17 +54,10 @@ function AppRoutes() {
 
       <main className="app-main">
         <Routes>
-
           {/* Authentication */}
-          <Route
-            path="/login"
-            element={<Login />}
-          />
+          <Route path="/login" element={<Login />} />
 
-          <Route
-            path="/register"
-            element={<Register />}
-          />
+          <Route path="/register" element={<Register />} />
 
           {/* Dashboard */}
           <Route
@@ -84,8 +66,7 @@ function AppRoutes() {
               <ProtectedRoute>
                 <Dashboard
                   onOpenProject={(id) =>
-                    window.location.href =
-                      `/projects/${id}`
+                    (window.location.href = `/projects/${id}`)
                   }
                 />
               </ProtectedRoute>
@@ -116,17 +97,9 @@ function AppRoutes() {
           <Route
             path="*"
             element={
-              <Navigate
-                to={
-                  isAuthenticated()
-                    ? "/"
-                    : "/login"
-                }
-                replace
-              />
+              <Navigate to={isAuthenticated() ? "/" : "/login"} replace />
             }
           />
-
         </Routes>
       </main>
     </>
