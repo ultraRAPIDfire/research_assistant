@@ -9,8 +9,8 @@ export default function Navbar() {
         <button
           type="button"
           className="brand"
-          onClick={() => navigate("/")}
-          aria-label="Go to home"
+          onClick={() => navigate("/dashboard")}
+          aria-label="Go to dashboard"
         >
           <span className="brand-mark">§</span>
 
@@ -22,8 +22,7 @@ export default function Navbar() {
 
         <nav className="nav-links" aria-label="Main navigation">
           <NavLink
-            to="/"
-            end
+            to="/dashboard"
             className={({ isActive }) =>
               isActive ? "nav-link active" : "nav-link"
             }

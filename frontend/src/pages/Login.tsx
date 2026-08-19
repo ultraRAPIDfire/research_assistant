@@ -25,7 +25,7 @@ export default function Login() {
 
     localStorage.setItem("research_auth", "true");
 
-    navigate("/", { replace: true });
+    navigate("/dashboard", { replace: true });
   }
 
   return (

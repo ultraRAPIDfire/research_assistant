@@ -54,6 +54,19 @@ function AppRoutes() {
 
       <main className="app-main">
         <Routes>
+          {/* Root — never shows the dashboard directly.
+              Signed-in users go to /dashboard, everyone
+              else lands on /login. */}
+          <Route
+            path="/"
+            element={
+              <Navigate
+                to={isAuthenticated() ? "/dashboard" : "/login"}
+                replace
+              />
+            }
+          />
+
           {/* Authentication */}
           <Route path="/login" element={<Login />} />
 
@@ -61,7 +74,7 @@ function AppRoutes() {
 
           {/* Dashboard */}
           <Route
-            path="/"
+            path="/dashboard"
             element={
               <ProtectedRoute>
                 <Dashboard
@@ -97,7 +110,10 @@ function AppRoutes() {
           <Route
             path="*"
             element={
-              <Navigate to={isAuthenticated() ? "/" : "/login"} replace />
+              <Navigate
+                to={isAuthenticated() ? "/dashboard" : "/login"}
+                replace
+              />
             }
           />
         </Routes>
