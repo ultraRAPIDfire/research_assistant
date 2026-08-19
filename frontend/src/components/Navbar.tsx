@@ -35,7 +35,7 @@ export default function Navbar() {
           </NavLink>
 
           <NavLink
-            to="/dashboard"
+            to="/"
             className={({ isActive }) =>
               isActive
                 ? "nav-link active"
