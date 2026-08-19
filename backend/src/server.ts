@@ -14,9 +14,10 @@ dotenv.config();
 
 const app = express();
 
-const frontendUrl =
+const frontendUrl = (
   process.env.FRONTEND_URL ||
-  "http://localhost:5173";
+  "http://localhost:5173"
+).replace(/\/$/, "");
 
 app.use(
   cors({
@@ -97,16 +98,7 @@ const PORT =
   Number(process.env.PORT) ||
   5000;
 
-app.listen(
-  PORT,
-  "0.0.0.0",
-  () => {
-    console.log(
-      `Server running on port ${PORT}`
-    );
-
-    console.log(
-      `Frontend allowed origin: ${frontendUrl}`
-    );
-  }
-);
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`Server running on port ${PORT}`);
+  console.log(`Frontend allowed origin: ${frontendUrl}`);
+});
