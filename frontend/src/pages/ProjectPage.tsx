@@ -44,16 +44,14 @@ export default function ProjectPage({
       setLoading(true);
       setError("");
 
-      const [
-        projectData,
-        sourceData,
-      ] = await Promise.all([
-        api.getProject(projectId),
-        api.getSources(
-          projectId,
-          search
-        ),
-      ]);
+      const [projectData, sourceData] =
+        await Promise.all([
+          api.getProject(projectId),
+          api.getSources(
+            projectId,
+            search
+          ),
+        ]);
 
       setProject(projectData);
       setSources(sourceData);
@@ -86,29 +84,37 @@ export default function ProjectPage({
       content?: string;
     }
   ) {
-    const source =
-      await api.createSource(
-        projectId,
-        data
+    try {
+      const source =
+        await api.createSource(
+          projectId,
+          data
+        );
+
+      setSources((current) => [
+        source,
+        ...current,
+      ]);
+
+      setShowSourceForm(false);
+
+      setProject((current) =>
+        current
+          ? {
+              ...current,
+              source_count:
+                (current.source_count || 0) +
+                1,
+            }
+          : current
       );
-
-    setSources((current) => [
-      source,
-      ...current,
-    ]);
-
-    setShowSourceForm(false);
-
-    setProject((current) =>
-      current
-        ? {
-            ...current,
-            source_count:
-              (current.source_count ||
-                0) + 1,
-          }
-        : current
-    );
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to create source"
+      );
+    }
   }
 
   async function handleDeleteSource(
@@ -139,8 +145,8 @@ export default function ProjectPage({
               ...current,
               source_count: Math.max(
                 0,
-                (current.source_count ||
-                  1) - 1
+                (current.source_count || 1) -
+                  1
               ),
             }
           : current
@@ -164,9 +170,7 @@ export default function ProjectPage({
           projectId
         );
 
-      setAnalysis(
-        result.analysis
-      );
+      setAnalysis(result.analysis);
     } catch (err) {
       setError(
         err instanceof Error
@@ -180,213 +184,392 @@ export default function ProjectPage({
 
   if (loading && !project) {
     return (
-      <div className="card loading">
-        Loading research project...
+      <div className="project-page">
+        <div className="project-loading">
+          <div className="loading-spinner" />
+          <p>Loading research project...</p>
+        </div>
       </div>
     );
   }
 
   if (!project) {
     return (
-      <div className="error">
-        Project not found.
+      <div className="project-page">
+        <div className="project-error">
+          <h2>Project not found</h2>
+          <p>
+            This research project could not
+            be loaded.
+          </p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div>
-      <div className="page-header">
-        <div>
-          <h1 className="page-title">
+    <div className="project-page">
+
+      {/* =========================================
+          PROJECT HEADER
+      ========================================== */}
+
+      <header className="project-hero">
+
+        <div className="project-hero-content">
+
+          <div className="project-label">
+            RESEARCH PROJECT
+          </div>
+
+          <h1 className="project-title">
             {project.title}
           </h1>
 
-          <p className="page-subtitle">
+          <p className="project-question">
             {project.research_question ||
               "No research question specified."}
           </p>
+
+          <div className="project-meta">
+            <div className="project-meta-item">
+              <span className="meta-label">
+                SOURCES
+              </span>
+
+              <strong>
+                {project.source_count || 0}
+              </strong>
+            </div>
+
+            <div className="project-meta-divider" />
+
+            <div className="project-meta-item">
+              <span className="meta-label">
+                CREATED
+              </span>
+
+              <strong>
+                {new Date(
+                  project.created_at
+                ).toLocaleDateString()}
+              </strong>
+            </div>
+          </div>
+
         </div>
 
-        <button
-          className="button button-ai"
-          onClick={
-            handleAnalyzeProject
-          }
-          disabled={
-            analyzing ||
-            sources.length === 0
-          }
-        >
-          {analyzing
-            ? "Analyzing..."
-            : "✨ Analyze Research"}
-        </button>
-      </div>
-
-      {error && (
-        <div className="error">
-          {error}
-        </div>
-      )}
-
-      <div className="card form-card">
-        <strong>
-          About this project
-        </strong>
-
-        <p
-          style={{
-            marginTop: 8,
-            color: "#667085",
-          }}
-        >
-          {project.description ||
-            "No project description provided."}
-        </p>
-      </div>
-
-      {showSourceForm && (
-        <SourceForm
-          onSubmit={
-            handleCreateSource
-          }
-          onCancel={() =>
-            setShowSourceForm(false)
-          }
-        />
-      )}
-
-      <div className="toolbar">
-        <div>
-          <h2 style={{ margin: 0 }}>
-            Research Sources
-          </h2>
-
-          <p className="page-subtitle">
-            {sources.length} source
-            {sources.length === 1
-              ? ""
-              : "s"}
-          </p>
-        </div>
-
-        <div className="button-row">
-          <input
-            className="search field"
-            value={search}
-            onChange={(event) =>
-              setSearch(
-                event.target.value
-              )
-            }
-            placeholder="Search sources..."
-            style={{
-              padding: "11px 13px",
-              border:
-                "1px solid #d0d5dd",
-              borderRadius: 10,
-              outline: "none",
-            }}
-          />
-
+        <div className="project-hero-actions">
           <button
-            className="button button-primary"
-            onClick={() =>
-              setShowSourceForm(
-                true
-              )
+            className="project-ai-button"
+            onClick={
+              handleAnalyzeProject
+            }
+            disabled={
+              analyzing ||
+              sources.length === 0
             }
           >
-            + Add Source
+            {analyzing
+              ? "Analyzing..."
+              : "Analyze Research"}
           </button>
         </div>
-      </div>
 
-      {sources.length === 0 ? (
-        <div className="card empty-state">
-          <div className="empty-state-icon">
-            📚
-          </div>
+      </header>
 
-          <h2>
-            No sources found
-          </h2>
 
-          <p>
-            Add research papers,
-            articles, notes, or other
-            material to this project.
-          </p>
-        </div>
-      ) : (
-        <div className="source-list">
-          {sources.map((source) => (
-            <article
-              className="card source-card"
-              key={source.id}
-            >
-              <h3>
-                {source.title}
-              </h3>
+      {/* =========================================
+          ERROR
+      ========================================== */}
 
-              <div className="source-author">
-                {source.author ||
-                  "Unknown author"}
-              </div>
+      {error && (
+        <div className="project-error-banner">
+          <span>{error}</span>
 
-              <p className="source-content-preview">
-                {source.content
-                  ? source.content.slice(
-                      0,
-                      220
-                    ) +
-                    (source.content
-                      .length > 220
-                      ? "..."
-                      : "")
-                  : "No content provided."}
-              </p>
-
-              <div className="button-row">
-                <button
-                  className="button button-primary"
-                  onClick={() =>
-                    onOpenSource(
-                      source.id
-                    )
-                  }
-                >
-                  View Source
-                </button>
-
-                <button
-                  className="button button-danger"
-                  onClick={() =>
-                    handleDeleteSource(
-                      source.id
-                    )
-                  }
-                >
-                  Delete
-                </button>
-              </div>
-            </article>
-          ))}
+          <button
+            onClick={() => setError("")}
+          >
+            Dismiss
+          </button>
         </div>
       )}
+
+
+      {/* =========================================
+          PROJECT OVERVIEW
+      ========================================== */}
+
+      <section className="project-overview">
+
+        <div className="overview-heading">
+          <div>
+            <span className="section-eyebrow">
+              OVERVIEW
+            </span>
+
+            <h2>
+              About this project
+            </h2>
+          </div>
+        </div>
+
+        <p>
+          {project.description ||
+            "No project description has been added yet."}
+        </p>
+
+      </section>
+
+
+      {/* =========================================
+          SOURCE FORM
+      ========================================== */}
+
+      {showSourceForm && (
+        <div className="source-form-wrapper">
+          <SourceForm
+            onSubmit={
+              handleCreateSource
+            }
+            onCancel={() =>
+              setShowSourceForm(false)
+            }
+          />
+        </div>
+      )}
+
+
+      {/* =========================================
+          SOURCES
+      ========================================== */}
+
+      <section className="sources-section">
+
+        <div className="sources-header">
+
+          <div>
+            <span className="section-eyebrow">
+              RESEARCH LIBRARY
+            </span>
+
+            <h2>
+              Research Sources
+            </h2>
+
+            <p>
+              Browse and manage the material
+              connected to this project.
+            </p>
+          </div>
+
+          <button
+            className="add-source-button"
+            onClick={() =>
+              setShowSourceForm(true)
+            }
+          >
+            Add Source
+          </button>
+
+        </div>
+
+
+        <div className="sources-toolbar">
+
+          <div className="source-count-label">
+            {sources.length}{" "}
+            {sources.length === 1
+              ? "source"
+              : "sources"}
+          </div>
+
+          <div className="source-search-wrapper">
+
+            <svg
+              className="search-icon"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <circle
+                cx="11"
+                cy="11"
+                r="7"
+              />
+              <path d="m20 20-4-4" />
+            </svg>
+
+            <input
+              value={search}
+              onChange={(event) =>
+                setSearch(
+                  event.target.value
+                )
+              }
+              placeholder="Search sources"
+              className="source-search"
+            />
+
+          </div>
+
+        </div>
+
+
+        {sources.length === 0 ? (
+          <div className="sources-empty">
+
+            <div className="empty-mark">
+              +
+            </div>
+
+            <h3>
+              No research sources
+            </h3>
+
+            <p>
+              Add papers, articles, notes,
+              websites, or other research
+              material to begin building
+              your library.
+            </p>
+
+            <button
+              className="add-source-button"
+              onClick={() =>
+                setShowSourceForm(true)
+              }
+            >
+              Add Your First Source
+            </button>
+
+          </div>
+        ) : (
+          <div className="source-grid">
+
+            {sources.map((source) => (
+              <article
+                className="research-source-card"
+                key={source.id}
+              >
+
+                <div className="source-card-top">
+
+                  <div className="source-type">
+                    SOURCE
+                  </div>
+
+                  <button
+                    className="source-delete"
+                    onClick={() =>
+                      handleDeleteSource(
+                        source.id
+                      )
+                    }
+                    aria-label="Delete source"
+                  >
+                    Delete
+                  </button>
+
+                </div>
+
+                <h3>
+                  {source.title}
+                </h3>
+
+                <div className="source-author">
+                  {source.author ||
+                    "Unknown author"}
+                </div>
+
+                <p className="source-preview">
+                  {source.content
+                    ? source.content.slice(
+                        0,
+                        220
+                      ) +
+                      (source.content
+                        .length > 220
+                        ? "..."
+                        : "")
+                    : "No content provided."}
+                </p>
+
+                <div className="source-card-footer">
+
+                  <span>
+                    {new Date(
+                      source.created_at
+                    ).toLocaleDateString()}
+                  </span>
+
+                  <button
+                    className="view-source-button"
+                    onClick={() =>
+                      onOpenSource(
+                        source.id
+                      )
+                    }
+                  >
+                    View Source
+                    <span>→</span>
+                  </button>
+
+                </div>
+
+              </article>
+            ))}
+
+          </div>
+        )}
+
+      </section>
+
+
+      {/* =========================================
+          AI ANALYSIS
+      ========================================== */}
 
       {analysis && (
-        <section className="ai-panel">
-          <h2>
-            ✨ Research Synthesis
-          </h2>
+        <section className="research-synthesis">
 
-          <div className="ai-result">
+          <div className="synthesis-header">
+
+            <div>
+              <span className="section-eyebrow">
+                AI ANALYSIS
+              </span>
+
+              <h2>
+                Research Synthesis
+              </h2>
+
+              <p>
+                An AI-generated synthesis based
+                on the sources in this project.
+              </p>
+            </div>
+
+            <button
+              className="synthesis-refresh"
+              onClick={
+                handleAnalyzeProject
+              }
+              disabled={analyzing}
+            >
+              {analyzing
+                ? "Updating..."
+                : "Regenerate"}
+            </button>
+
+          </div>
+
+          <div className="synthesis-content">
             {analysis}
           </div>
+
         </section>
       )}
+
     </div>
   );
 }
