@@ -4,14 +4,18 @@ import {
   analyzeSource,
   analyzeProject,
 } from "../services/aiService";
+import { requireAuth, AuthRequest } from "../middleware/auth";
 
 const router = Router();
+
+// Protect all AI routes
+router.use(requireAuth);
 
 /*
 ANALYZE SOURCE
 POST /api/ai/analyze-source
 */
-router.post("/analyze-source", async (req, res) => {
+router.post("/analyze-source", async (req: AuthRequest, res) => {
   try {
     const { sourceId } = req.body;
 
@@ -23,11 +27,12 @@ router.post("/analyze-source", async (req, res) => {
 
     const result = await pool.query(
       `
-      SELECT title, content
-      FROM sources
-      WHERE id = $1
+      SELECT s.title, s.content
+      FROM sources s
+      JOIN projects p ON p.id = s.project_id
+      WHERE s.id = $1 AND p.user_id = $2
       `,
-      [sourceId]
+      [sourceId, req.userId]
     );
 
     if (result.rows.length === 0) {
@@ -54,8 +59,7 @@ router.post("/analyze-source", async (req, res) => {
       analysis,
     });
   } catch (error) {
-    console.error(error);
-
+    console.error("AI SOURCE ANALYSIS ERROR:", error);
     res.status(500).json({
       error: "Source analysis failed",
     });
@@ -66,7 +70,7 @@ router.post("/analyze-source", async (req, res) => {
 ANALYZE PROJECT
 POST /api/ai/analyze-project
 */
-router.post("/analyze-project", async (req, res) => {
+router.post("/analyze-project", async (req: AuthRequest, res) => {
   try {
     const { projectId } = req.body;
 
@@ -80,9 +84,9 @@ router.post("/analyze-project", async (req, res) => {
       `
       SELECT *
       FROM projects
-      WHERE id = $1
+      WHERE id = $1 AND user_id = $2
       `,
-      [projectId]
+      [projectId, req.userId]
     );
 
     if (projectResult.rows.length === 0) {
@@ -106,8 +110,7 @@ router.post("/analyze-project", async (req, res) => {
 
     if (sourceResult.rows.length === 0) {
       return res.status(400).json({
-        error:
-          "This project has no research sources.",
+        error: "This project has no research sources.",
       });
     }
 
@@ -125,11 +128,11 @@ router.post("/analyze-project", async (req, res) => {
     });
   } catch (error) {
     console.error("AI PROJECT ANALYSIS ERROR:", error);
-
     res.status(500).json({
       error: "Project analysis failed",
     });
   }
 });
 
-export default router;  
+export default router;
+  

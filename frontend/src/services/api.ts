@@ -2,21 +2,56 @@ const API_URL =
   import.meta.env.VITE_API_URL ||
   "http://localhost:5000/api";
 
+const TOKEN_KEY = "research_assistant_token";
+const USER_KEY = "research_assistant_user";
+
+export function getStoredToken(): string | null {
+  return localStorage.getItem(TOKEN_KEY);
+}
+
+export function getStoredUser(): User | null {
+  const data = localStorage.getItem(USER_KEY);
+  if (!data) return null;
+  try {
+    return JSON.parse(data) as User;
+  } catch {
+    return null;
+  }
+}
+
+export function setStoredSession(token: string, user: User) {
+  localStorage.setItem(TOKEN_KEY, token);
+  localStorage.setItem(USER_KEY, JSON.stringify(user));
+  localStorage.setItem("research_auth", "true");
+}
+
+export function clearStoredSession() {
+  localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(USER_KEY);
+  localStorage.removeItem("research_auth");
+}
+
 async function request<T>(
   endpoint: string,
   options?: RequestInit
 ): Promise<T> {
+  const token = getStoredToken();
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...(options?.headers as Record<string, string> || {}),
+  };
+
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
   const response = await fetch(
     `${API_URL}${endpoint}`,
     {
       ...options,
-
       credentials: "include",
-
-      headers: {
-        "Content-Type": "application/json",
-        ...(options?.headers || {}),
-      },
+      headers,
     }
   );
 
@@ -25,6 +60,9 @@ async function request<T>(
     .catch(() => null);
 
   if (!response.ok) {
+    if (response.status === 401) {
+      clearStoredSession();
+    }
     throw new Error(
       data?.error ||
         `Request failed with status ${response.status}`
@@ -47,6 +85,7 @@ export interface User {
 
 export interface AuthResponse {
   user: User;
+  token?: string;
 }
 
 export interface Project {
@@ -116,40 +155,56 @@ export const api = {
      AUTH
   =================================================== */
 
-  register(data: {
+  async register(data: {
     name: string;
     email: string;
     password: string;
   }) {
-    return request<AuthResponse>(
+    const res = await request<AuthResponse>(
       "/auth/register",
       {
         method: "POST",
         body: JSON.stringify(data),
       }
     );
+
+    if (res.user && res.token) {
+      setStoredSession(res.token, res.user);
+    }
+
+    return res;
   },
 
-  login(data: {
+  async login(data: {
     email: string;
     password: string;
   }) {
-    return request<AuthResponse>(
+    const res = await request<AuthResponse>(
       "/auth/login",
       {
         method: "POST",
         body: JSON.stringify(data),
       }
     );
+
+    if (res.user && res.token) {
+      setStoredSession(res.token, res.user);
+    }
+
+    return res;
   },
 
-  logout() {
-    return request<DeleteResponse>(
-      "/auth/logout",
-      {
-        method: "POST",
-      }
-    );
+  async logout() {
+    try {
+      return await request<DeleteResponse>(
+        "/auth/logout",
+        {
+          method: "POST",
+        }
+      );
+    } finally {
+      clearStoredSession();
+    }
   },
 
   getCurrentUser() {
@@ -293,4 +348,4 @@ export const api = {
       }
     );
   },
-};
+};

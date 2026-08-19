@@ -2,17 +2,20 @@ import { useEffect, useState } from "react";
 import { api } from "../services/api";
 import type { Project } from "../services/api";
 import ProjectForm from "../components/ProjectForm";
+import { useAuth } from "../context/useAuth";
 
 interface DashboardProps {
   onOpenProject: (id: number) => void;
 }
 
 export default function Dashboard({ onOpenProject }: DashboardProps) {
+  const { user } = useAuth();
   const [projects, setProjects] = useState<Project[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState("");
+
 
   async function loadProjects() {
     try {
@@ -168,12 +171,16 @@ export default function Dashboard({ onOpenProject }: DashboardProps) {
       <section id="projects" className="section">
         <div className="section-header">
           <div>
-            <div className="eyebrow">Workspace</div>
+            <div className="eyebrow">
+              {user?.name ? `Workspace · ${user.name}` : "Workspace"}
+            </div>
 
-            <h2 className="section-title">Your Research Projects</h2>
+            <h2 className="section-title">
+              {user?.name ? `${user.name}’s Research Projects` : "Your Research Projects"}
+            </h2>
 
             <p className="section-subtitle">
-              Organize your sources and research in one place.
+              Organize your personal sources and research in one place.
             </p>
           </div>
 

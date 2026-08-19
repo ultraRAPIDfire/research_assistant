@@ -1,16 +1,36 @@
 import { Router } from "express";
 import { pool } from "../db/database";
+import { requireAuth, AuthRequest } from "../middleware/auth";
 
 const router = Router();
+
+// Protect all source routes
+router.use(requireAuth);
 
 /*
 GET SOURCES FOR PROJECT
 GET /api/sources/project/:projectId?search=
 */
-router.get("/project/:projectId", async (req, res) => {
+router.get("/project/:projectId", async (req: AuthRequest, res) => {
   try {
     const { projectId } = req.params;
     const search = String(req.query.search || "").trim();
+
+    // Verify project belongs to authenticated user
+    const project = await pool.query(
+      `
+      SELECT id
+      FROM projects
+      WHERE id = $1 AND user_id = $2
+      `,
+      [projectId, req.userId]
+    );
+
+    if (project.rows.length === 0) {
+      return res.status(404).json({
+        error: "Project not found",
+      });
+    }
 
     const result = await pool.query(
       `
@@ -31,7 +51,6 @@ router.get("/project/:projectId", async (req, res) => {
     res.json(result.rows);
   } catch (error) {
     console.error("GET SOURCES ERROR:", error);
-
     res.status(500).json({
       error: "Failed to fetch sources",
     });
@@ -42,17 +61,18 @@ router.get("/project/:projectId", async (req, res) => {
 GET SINGLE SOURCE
 GET /api/sources/:id
 */
-router.get("/:id", async (req, res) => {
+router.get("/:id", async (req: AuthRequest, res) => {
   try {
     const { id } = req.params;
 
     const result = await pool.query(
       `
-      SELECT *
-      FROM sources
-      WHERE id = $1
+      SELECT s.*
+      FROM sources s
+      JOIN projects p ON p.id = s.project_id
+      WHERE s.id = $1 AND p.user_id = $2
       `,
-      [id]
+      [id, req.userId]
     );
 
     if (result.rows.length === 0) {
@@ -64,7 +84,6 @@ router.get("/:id", async (req, res) => {
     res.json(result.rows[0]);
   } catch (error) {
     console.error("GET SOURCE ERROR:", error);
-
     res.status(500).json({
       error: "Failed to fetch source",
     });
@@ -75,16 +94,10 @@ router.get("/:id", async (req, res) => {
 CREATE SOURCE
 POST /api/sources/project/:projectId
 */
-router.post("/project/:projectId", async (req, res) => {
+router.post("/project/:projectId", async (req: AuthRequest, res) => {
   try {
     const { projectId } = req.params;
-
-    const {
-      title,
-      author,
-      url,
-      content,
-    } = req.body;
+    const { title, author, url, content } = req.body;
 
     if (!title || !title.trim()) {
       return res.status(400).json({
@@ -96,9 +109,9 @@ router.post("/project/:projectId", async (req, res) => {
       `
       SELECT id
       FROM projects
-      WHERE id = $1
+      WHERE id = $1 AND user_id = $2
       `,
-      [projectId]
+      [projectId, req.userId]
     );
 
     if (project.rows.length === 0) {
@@ -127,7 +140,6 @@ router.post("/project/:projectId", async (req, res) => {
     res.status(201).json(result.rows[0]);
   } catch (error) {
     console.error("CREATE SOURCE ERROR:", error);
-
     res.status(500).json({
       error: "Failed to create source",
     });
@@ -138,16 +150,10 @@ router.post("/project/:projectId", async (req, res) => {
 UPDATE SOURCE
 PUT /api/sources/:id
 */
-router.put("/:id", async (req, res) => {
+router.put("/:id", async (req: AuthRequest, res) => {
   try {
     const { id } = req.params;
-
-    const {
-      title,
-      author,
-      url,
-      content,
-    } = req.body;
+    const { title, author, url, content } = req.body;
 
     if (!title || !title.trim()) {
       return res.status(400).json({
@@ -157,15 +163,16 @@ router.put("/:id", async (req, res) => {
 
     const result = await pool.query(
       `
-      UPDATE sources
+      UPDATE sources s
       SET
         title = $1,
         author = $2,
         url = $3,
         content = $4,
         updated_at = CURRENT_TIMESTAMP
-      WHERE id = $5
-      RETURNING *
+      FROM projects p
+      WHERE s.project_id = p.id AND s.id = $5 AND p.user_id = $6
+      RETURNING s.*
       `,
       [
         title.trim(),
@@ -173,6 +180,7 @@ router.put("/:id", async (req, res) => {
         url?.trim() || null,
         content?.trim() || null,
         id,
+        req.userId,
       ]
     );
 
@@ -185,7 +193,6 @@ router.put("/:id", async (req, res) => {
     res.json(result.rows[0]);
   } catch (error) {
     console.error("UPDATE SOURCE ERROR:", error);
-
     res.status(500).json({
       error: "Failed to update source",
     });
@@ -196,17 +203,18 @@ router.put("/:id", async (req, res) => {
 DELETE SOURCE
 DELETE /api/sources/:id
 */
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", async (req: AuthRequest, res) => {
   try {
     const { id } = req.params;
 
     const result = await pool.query(
       `
-      DELETE FROM sources
-      WHERE id = $1
-      RETURNING id
+      DELETE FROM sources s
+      USING projects p
+      WHERE s.project_id = p.id AND s.id = $1 AND p.user_id = $2
+      RETURNING s.id
       `,
-      [id]
+      [id, req.userId]
     );
 
     if (result.rows.length === 0) {
@@ -220,11 +228,10 @@ router.delete("/:id", async (req, res) => {
     });
   } catch (error) {
     console.error("DELETE SOURCE ERROR:", error);
-
     res.status(500).json({
       error: "Failed to delete source",
     });
   }
 });
 
-export default router;
+export default router;

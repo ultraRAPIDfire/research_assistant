@@ -5,8 +5,9 @@ export interface AuthRequest extends Request {
   userId?: number;
 }
 
-const JWT_SECRET =
-  process.env.JWT_SECRET || "development-secret-change-this";
+function getJwtSecret(): string {
+  return process.env.JWT_SECRET || "development-secret-change-this";
+}
 
 export function requireAuth(
   req: AuthRequest,
@@ -14,7 +15,12 @@ export function requireAuth(
   next: NextFunction
 ) {
   try {
-    const token = req.cookies?.token;
+    let token = req.cookies?.token;
+
+    const authHeader = req.headers.authorization;
+    if (!token && authHeader && authHeader.startsWith("Bearer ")) {
+      token = authHeader.substring(7).trim();
+    }
 
     if (!token) {
       return res.status(401).json({
@@ -24,10 +30,16 @@ export function requireAuth(
 
     const payload = jwt.verify(
       token,
-      JWT_SECRET
+      getJwtSecret()
     ) as {
       userId: number;
     };
+
+    if (!payload?.userId) {
+      return res.status(401).json({
+        error: "Invalid token payload",
+      });
+    }
 
     req.userId = payload.userId;
 
@@ -37,4 +49,4 @@ export function requireAuth(
       error: "Invalid or expired session",
     });
   }
-}
+}

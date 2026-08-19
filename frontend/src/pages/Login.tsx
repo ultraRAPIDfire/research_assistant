@@ -1,10 +1,12 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/useAuth";
 
 export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { login } = useAuth();
 
   const successMessage =
     (location.state as { message?: string } | null)?.message || "";
@@ -12,8 +14,9 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  function handleSubmit(event: FormEvent) {
+  async function handleSubmit(event: FormEvent) {
     event.preventDefault();
 
     setError("");
@@ -23,9 +26,20 @@ export default function Login() {
       return;
     }
 
-    localStorage.setItem("research_auth", "true");
-
-    navigate("/dashboard", { replace: true });
+    try {
+      setLoading(true);
+      await login({
+        email: email.trim(),
+        password,
+      });
+      navigate("/dashboard", { replace: true });
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Invalid email or password."
+      );
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -91,6 +105,9 @@ export default function Login() {
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
                 placeholder="you@example.com"
+                disabled={loading}
+                autoComplete="email"
+                required
               />
             </label>
 
@@ -101,11 +118,18 @@ export default function Login() {
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
                 placeholder="••••••••"
+                disabled={loading}
+                autoComplete="current-password"
+                required
               />
             </label>
 
-            <button type="submit" className="button button-primary auth-submit">
-              Sign in →
+            <button
+              type="submit"
+              className="button button-primary auth-submit"
+              disabled={loading}
+            >
+              {loading ? "Signing in…" : "Sign in →"}
             </button>
           </form>
 
@@ -123,4 +147,4 @@ export default function Login() {
       </div>
     </div>
   );
-}
+}

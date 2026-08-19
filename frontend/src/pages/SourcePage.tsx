@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { api } from "../services/api";
 import type { Source } from "../services/api";
 
@@ -7,6 +8,7 @@ interface SourcePageProps {
 }
 
 export default function SourcePage({ sourceId }: SourcePageProps) {
+  const navigate = useNavigate();
   const [source, setSource] = useState<Source | null>(null);
   const [analysis, setAnalysis] = useState("");
   const [loading, setLoading] = useState(true);
@@ -133,7 +135,7 @@ export default function SourcePage({ sourceId }: SourcePageProps) {
       await api.deleteSource(source.id);
 
       // Return to the project page.
-      window.location.href = `/projects/${source.project_id}`;
+      navigate(`/projects/${source.project_id}`);
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Failed to delete source"

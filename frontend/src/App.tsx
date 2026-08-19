@@ -1,11 +1,11 @@
 import Navbar from "./components/Navbar";
-
 import {
   BrowserRouter,
   Navigate,
   Route,
   Routes,
   useNavigate,
+  useParams,
 } from "react-router-dom";
 
 import Dashboard from "./pages/Dashboard";
@@ -13,16 +13,51 @@ import ProjectPage from "./pages/ProjectPage";
 import SourcePage from "./pages/SourcePage";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import { AuthProvider } from "./context/AuthContext";
+import { useAuth } from "./context/useAuth";
 
 import "./App.css";
 
-function isAuthenticated() {
-  return localStorage.getItem("research_auth") === "true";
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div
+        className="empty-state"
+        style={{
+          minHeight: "60vh",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: "16px",
+        }}
+      >
+        <div className="loading-spinner" />
+        <p style={{ color: "var(--ink-muted, #656d76)" }}>
+          Checking session...
+        </p>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return <>{children}</>;
 }
 
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  if (!isAuthenticated()) {
-    return <Navigate to="/login" replace />;
+function PublicAuthRoute({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, loading } = useAuth();
+
+  if (loading) {
+    return null;
+  }
+
+  if (isAuthenticated) {
+    return <Navigate to="/dashboard" replace />;
   }
 
   return <>{children}</>;
@@ -30,47 +65,63 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 function ProjectRoute() {
   const navigate = useNavigate();
-
-  const id = Number(window.location.pathname.split("/")[2]);
+  const { id } = useParams<{ id: string }>();
 
   return (
     <ProjectPage
-      projectId={id}
+      projectId={Number(id)}
       onOpenSource={(sourceId) => navigate(`/sources/${sourceId}`)}
     />
   );
 }
 
 function SourceRoute() {
-  const id = Number(window.location.pathname.split("/")[2]);
+  const { id } = useParams<{ id: string }>();
 
-  return <SourcePage sourceId={id} />;
+  return <SourcePage sourceId={Number(id)} />;
 }
 
 function AppRoutes() {
+  const { isAuthenticated, loading } = useAuth();
+  const navigate = useNavigate();
+
   return (
     <>
       <Navbar />
 
       <main className="app-main">
         <Routes>
-          {/* Root — never shows the dashboard directly.
-              Signed-in users go to /dashboard, everyone
-              else lands on /login. */}
+          {/* Root redirect */}
           <Route
             path="/"
             element={
-              <Navigate
-                to={isAuthenticated() ? "/dashboard" : "/login"}
-                replace
-              />
+              loading ? null : (
+                <Navigate
+                  to={isAuthenticated ? "/dashboard" : "/login"}
+                  replace
+                />
+              )
             }
           />
 
           {/* Authentication */}
-          <Route path="/login" element={<Login />} />
+          <Route
+            path="/login"
+            element={
+              <PublicAuthRoute>
+                <Login />
+              </PublicAuthRoute>
+            }
+          />
 
-          <Route path="/register" element={<Register />} />
+          <Route
+            path="/register"
+            element={
+              <PublicAuthRoute>
+                <Register />
+              </PublicAuthRoute>
+            }
+          />
 
           {/* Dashboard */}
           <Route
@@ -78,9 +129,7 @@ function AppRoutes() {
             element={
               <ProtectedRoute>
                 <Dashboard
-                  onOpenProject={(id) =>
-                    (window.location.href = `/projects/${id}`)
-                  }
+                  onOpenProject={(id) => navigate(`/projects/${id}`)}
                 />
               </ProtectedRoute>
             }
@@ -111,7 +160,7 @@ function AppRoutes() {
             path="*"
             element={
               <Navigate
-                to={isAuthenticated() ? "/dashboard" : "/login"}
+                to={isAuthenticated ? "/dashboard" : "/login"}
                 replace
               />
             }
@@ -125,7 +174,9 @@ function AppRoutes() {
 export default function App() {
   return (
     <BrowserRouter>
-      <AppRoutes />
+      <AuthProvider>
+        <AppRoutes />
+      </AuthProvider>
     </BrowserRouter>
   );
 }

@@ -1,10 +1,11 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { api } from "../services/api";
+import { useAuth } from "../context/useAuth";
 
 export default function Register() {
   const navigate = useNavigate();
+  const { register } = useAuth();
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -36,34 +37,20 @@ export default function Register() {
     try {
       setLoading(true);
 
-      const result = await api.register({
+      await register({
         name: name.trim(),
         email: email.trim(),
         password,
       });
 
-      /*
-       * Registration succeeded on the backend.
-       *
-       * We intentionally do not store an authentication
-       * flag in localStorage. Authentication should come
-       * from the backend session/cookie.
-       */
-
-      if (result.user) {
-        navigate("/login", {
-          replace: true,
-          state: {
-            message: "Account created successfully. Please sign in.",
-          },
-        });
-      }
+      navigate("/dashboard", { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Registration failed.");
     } finally {
       setLoading(false);
     }
   }
+
 
   return (
     <div className="auth-page">
