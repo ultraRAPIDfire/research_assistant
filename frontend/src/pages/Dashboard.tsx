@@ -7,9 +7,7 @@ interface DashboardProps {
   onOpenProject: (id: number) => void;
 }
 
-export default function Dashboard({
-  onOpenProject,
-}: DashboardProps) {
+export default function Dashboard({ onOpenProject }: DashboardProps) {
   const [projects, setProjects] = useState<Project[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -26,9 +24,7 @@ export default function Dashboard({
       setProjects(data);
     } catch (err) {
       setError(
-        err instanceof Error
-          ? err.message
-          : "Failed to load projects"
+        err instanceof Error ? err.message : "Failed to load projects"
       );
     } finally {
       setLoading(false);
@@ -61,17 +57,12 @@ export default function Dashboard({
 
       const project = await api.createProject(data);
 
-      setProjects((current) => [
-        project,
-        ...current,
-      ]);
+      setProjects((current) => [project, ...current]);
 
       setShowForm(false);
     } catch (err) {
       setError(
-        err instanceof Error
-          ? err.message
-          : "Failed to create project"
+        err instanceof Error ? err.message : "Failed to create project"
       );
     } finally {
       setCreating(false);
@@ -93,37 +84,29 @@ export default function Dashboard({
       await api.deleteProject(project.id);
 
       setProjects((current) =>
-        current.filter(
-          (item) => item.id !== project.id
-        )
+        current.filter((item) => item.id !== project.id)
       );
     } catch (err) {
       setError(
-        err instanceof Error
-          ? err.message
-          : "Failed to delete project"
+        err instanceof Error ? err.message : "Failed to delete project"
       );
     }
   }
 
   function scrollToProjects() {
-    document
-      .getElementById("projects")
-      ?.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      });
+    document.getElementById("projects")?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
   }
 
   return (
     <div className="home-page">
-
       {/* HERO */}
       <section className="hero">
         <div className="hero-content">
-
-          <div className="hero-badge">
-            <span>✨</span>
+          <div className="badge">
+            <span className="badge-dot" />
             AI-powered research workspace
           </div>
 
@@ -134,9 +117,8 @@ export default function Dashboard({
           </h1>
 
           <p className="hero-description">
-            Organize your research projects, manage
-            sources, and use AI to uncover summaries,
-            key findings, research questions, and
+            Organize your research projects, manage sources, and use AI to
+            uncover summaries, key findings, research questions, and
             connections across your sources.
           </p>
 
@@ -167,8 +149,7 @@ export default function Dashboard({
             <div className="hero-stat">
               <strong>
                 {projects.reduce(
-                  (total, project) =>
-                    total + (project.source_count || 0),
+                  (total, project) => total + (project.source_count || 0),
                   0
                 )}
               </strong>
@@ -180,28 +161,19 @@ export default function Dashboard({
               <span>Analysis</span>
             </div>
           </div>
-
         </div>
       </section>
 
       {/* PROJECTS */}
-      <section
-        id="projects"
-        className="section"
-      >
+      <section id="projects" className="section">
         <div className="section-header">
           <div>
-            <div className="section-eyebrow">
-              WORKSPACE
-            </div>
+            <div className="eyebrow">Workspace</div>
 
-            <h2 className="section-title">
-              Your Research Projects
-            </h2>
+            <h2 className="section-title">Your Research Projects</h2>
 
             <p className="section-subtitle">
-              Organize your sources and research
-              in one place.
+              Organize your sources and research in one place.
             </p>
           </div>
 
@@ -235,30 +207,20 @@ export default function Dashboard({
           <div className="empty-state">
             <div className="loading-spinner" />
 
-            <h2>
-              Loading your research...
-            </h2>
+            <h2>Loading your research...</h2>
 
-            <p>
-              Getting your projects ready.
-            </p>
+            <p>Getting your projects ready.</p>
           </div>
         ) : projects.length === 0 ? (
-
           /* EMPTY STATE */
           <div className="empty-state">
-            <div className="empty-icon">
-              🔬
-            </div>
+            <div className="empty-icon">📇</div>
 
-            <h2>
-              No research projects yet
-            </h2>
+            <h2>No research projects yet</h2>
 
             <p>
-              Create your first research project
-              to start collecting sources and
-              analyzing your research with AI.
+              Create your first research project to start collecting sources
+              and analyzing your research with AI.
             </p>
 
             <button
@@ -269,77 +231,58 @@ export default function Dashboard({
               Create Your First Project
             </button>
           </div>
-
         ) : (
-
           /* PROJECT GRID */
           <div className="project-grid">
             {projects.map((project) => (
-              <article
-                className="project-card"
-                key={project.id}
-              >
-                <div className="project-card-header">
-                  <div className="project-icon">
-                    📚
-                  </div>
-
-                  <span className="project-status">
-                    Active
-                  </span>
+              <article className="project-card" key={project.id}>
+                <div className="project-card-tab">
+                  <span>Project</span>
+                  <span className="project-status">Active</span>
                 </div>
 
-                <h3 className="project-card-title">
-                  {project.title}
-                </h3>
+                <div className="project-card-body">
+                  <h3 className="project-card-title">{project.title}</h3>
 
-                <p className="project-card-description">
-                  {project.description ||
-                    project.research_question ||
-                    "Research project"}
-                </p>
+                  <p className="project-card-description">
+                    {project.description ||
+                      project.research_question ||
+                      "Research project"}
+                  </p>
 
-                {project.research_question && (
-                  <div className="research-question">
-                    <span className="question-label">
-                      Research question
+                  {project.research_question && (
+                    <div className="research-question">
+                      <span className="question-label">
+                        Research question
+                      </span>
+
+                      <p>{project.research_question}</p>
+                    </div>
+                  )}
+
+                  <div className="project-card-footer">
+                    <span className="source-count">
+                      {project.source_count || 0}{" "}
+                      {project.source_count === 1 ? "source" : "sources"}
                     </span>
 
-                    <p>
-                      {project.research_question}
-                    </p>
-                  </div>
-                )}
+                    <div className="project-actions">
+                      <button
+                        type="button"
+                        className="button button-secondary"
+                        onClick={() => handleDelete(project)}
+                      >
+                        Delete
+                      </button>
 
-                <div className="project-card-footer">
-                  <span className="source-count">
-                    📄{" "}
-                    {project.source_count || 0}{" "}
-                    {project.source_count === 1
-                      ? "source"
-                      : "sources"}
-                  </span>
-
-                  <div className="project-actions">
-                    <button
-                      type="button"
-                      className="button button-secondary"
-                      onClick={() =>
-                        handleDelete(project)
-                      }
-                    >
-                      Delete
-                    </button>
-
-                    <button
-                      type="button"
-                      className="button button-primary"
-                      onClick={() =>
-                        onOpenProject(project.id)
-                      }
-                    >
-                      Open →
-                    </button>
+                      <button
+                        type="button"
+                        className="button button-primary"
+                        onClick={() => onOpenProject(project.id)}
+                      >
+                        Open →
+                      </button>
+                    </div>
                   </div>
                 </div>
               </article>
@@ -353,28 +296,19 @@ export default function Dashboard({
         <div
           className="modal-backdrop"
           onMouseDown={(event) => {
-            if (
-              event.target === event.currentTarget &&
-              !creating
-            ) {
+            if (event.target === event.currentTarget && !creating) {
               handleCloseForm();
             }
           }}
         >
-          <div className="modal">
+          <div className="modal dogear">
             <div className="modal-header">
               <div>
-                <div className="section-eyebrow">
-                  NEW PROJECT
-                </div>
+                <div className="eyebrow">New project</div>
 
-                <h2>
-                  Create Research Project
-                </h2>
+                <h2>Create Research Project</h2>
 
-                <p>
-                  Set up your research workspace.
-                </p>
+                <p>Set up your research workspace.</p>
               </div>
 
               <button
@@ -388,10 +322,7 @@ export default function Dashboard({
               </button>
             </div>
 
-            <ProjectForm
-              onSubmit={handleCreate}
-              onCancel={handleCloseForm}
-            />
+            <ProjectForm onSubmit={handleCreate} onCancel={handleCloseForm} />
           </div>
         </div>
       )}

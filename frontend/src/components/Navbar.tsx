@@ -12,34 +12,29 @@ export default function Navbar() {
           onClick={() => navigate("/")}
           aria-label="Go to home"
         >
-          <span className="brand-icon">🔬</span>
+          <span className="brand-mark">§</span>
 
           <span className="brand-text">
-            AI Research Assistant
+            <strong>AI Research Assistant</strong>
+            <small>Archive &amp; Synthesis</small>
           </span>
         </button>
 
-        <nav
-          className="nav-links"
-          aria-label="Main navigation"
-        >
+        <nav className="nav-links" aria-label="Main navigation">
           <NavLink
             to="/"
+            end
             className={({ isActive }) =>
-              isActive
-                ? "nav-link active"
-                : "nav-link"
+              isActive ? "nav-link active" : "nav-link"
             }
           >
             Home
           </NavLink>
 
           <NavLink
-            to="/"
+            to="/dashboard"
             className={({ isActive }) =>
-              isActive
-                ? "nav-link active"
-                : "nav-link"
+              isActive ? "nav-link active" : "nav-link"
             }
           >
             Dashboard
@@ -48,9 +43,7 @@ export default function Navbar() {
           <NavLink
             to="/login"
             className={({ isActive }) =>
-              isActive
-                ? "nav-link active"
-                : "nav-link"
+              isActive ? "nav-link active" : "nav-link"
             }
           >
             Login
